@@ -1,0 +1,20 @@
+# Secrets / entorno
+.env
+*.local
+
+# Grabaciones (volumen persistente, no versionar)
+recordings/*
+!recordings/.gitkeep
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+.vite/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+*.log

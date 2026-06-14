@@ -1,0 +1,7 @@
+# Normaliza todo a LF — el proyecto se despliega en Linux (VPS)
+* text=auto eol=lf
+
+# Binarios: sin conversión
+*.png binary
+*.jpg binary
+*.mp4 binary

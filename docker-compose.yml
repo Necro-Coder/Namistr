@@ -1,0 +1,81 @@
+services:
+
+  # ─── Media Server ─────────────────────────────────────────
+  mediamtx:
+    image: bluenviron/mediamtx:latest-ffmpeg
+    container_name: mediamtx
+    restart: unless-stopped
+    network_mode: host
+    # host es necesario para que OBS llegue por la IP de Tailscale
+    # y para que ffmpeg reenvíe a Twitch sin restricciones de red
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
+      - ./recordings:/recordings
+    env_file: .env
+
+  # ─── Reverse Proxy ────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"   # solo localhost, CF Tunnel apunta aquí
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    extra_hosts:
+      # permite que nginx (bridge) alcance backend/mediamtx (network_mode: host)
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - frontend
+      - backend
+
+  # ─── Frontend Vue.js ──────────────────────────────────────
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG:-latest}
+    container_name: frontend
+    restart: unless-stopped
+    # Las VITE_* NO van aquí: son variables de build, ya horneadas en la
+    # imagen por el workflow (build-args desde las Variables de GitHub).
+
+  # ─── Backend Node.js ──────────────────────────────────────
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-latest}
+    container_name: backend
+    restart: unless-stopped
+    environment:
+      - MEDIAMTX_API_URL=http://127.0.0.1:9997
+      - RECORDINGS_PATH=/recordings
+      - PORT=3001
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - ./recordings:/recordings
+    network_mode: host
+
+  # ─── Cloudflare Tunnel ────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+
+  # ─── GitHub Actions Self-Hosted Runner ────────────────────
+  github-runner:
+    image: myoung34/github-runner:latest
+    container_name: github-runner
+    restart: unless-stopped
+    environment:
+      - ACCESS_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - RUNNER_NAME=vps-runner
+      - REPO_URL=https://github.com/${GITHUB_REPOSITORY}
+      - LABELS=self-hosted,vps
+      - RUNNER_WORKDIR=/tmp/runner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/runner:/tmp/runner
+      - /opt/anime-stream:/opt/anime-stream

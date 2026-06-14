@@ -1,0 +1,77 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # deploy manual desde GitHub UI
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+
+  # ── Build de imágenes en runners gratuitos de GitHub ───────
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service: [frontend, backend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/${{ matrix.service }}:latest
+            ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
+          # build-args leídos de las Variables de GitHub
+          # (Repo → Settings → Secrets and variables → Actions → Variables).
+          # El backend los ignora; solo afectan al build del frontend.
+          build-args: |
+            VITE_HLS_URL=https://hls.${{ vars.DOMAIN }}/stream/index.m3u8
+            VITE_API_URL=https://api.${{ vars.DOMAIN }}
+            VITE_TWITCH_CHANNEL=${{ vars.TWITCH_CHANNEL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy en tu VPS via el runner de Tailscale ────────────
+  deploy:
+    needs: build
+    runs-on: [self-hosted, vps]   # el runner que corre en el VPS
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update IMAGE_TAG in .env
+        run: |
+          cd /opt/anime-stream
+          sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env
+
+      - name: Pull & redeploy (zero downtime)
+        run: |
+          cd /opt/anime-stream
+          docker compose pull frontend backend
+          docker compose up -d --no-deps --force-recreate frontend backend
+          docker image prune -f
+
+      - name: Smoke test
+        run: |
+          sleep 8
+          curl -sf https://stream.tudominio.com/health \
+            || (docker compose logs --tail=50 backend && exit 1)

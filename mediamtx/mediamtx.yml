@@ -1,0 +1,45 @@
+# ── Protocolos ──────────────────────────────────────────────
+rtmpAddress: :1935          # OBS apunta a 100.x.x.x:1935 (Tailscale)
+hlsAddress: :8888           # Nginx proxea este puerto
+apiAddress: :9997           # Solo accesible internamente (127.0.0.1)
+api: yes
+
+# ── HLS low-latency ─────────────────────────────────────────
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsAlwaysRemuxMPEGTS: yes
+
+# ── Auth: solo tú puedes publicar ───────────────────────────
+authMethod: internal
+authInternalUsers:
+  - user: obs
+    pass: ${MEDIAMTX_PUBLISH_PASS}
+    ips: []                 # Tailscale ya limita el acceso
+    permissions:
+      - action: publish
+        path: stream
+  # Lectura anónima (Nginx / espectadores HLS)
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: read
+      - action: playback
+
+paths:
+  stream:
+    # Al recibir el stream, reenviar a Twitch via FFmpeg
+    runOnReady: >-
+      ffmpeg
+      -re -i rtmp://127.0.0.1:1935/stream
+      -c:v copy
+      -c:a aac -b:a 160k -ar 44100
+      -f flv rtmp://live.twitch.tv/app/${TWITCH_STREAM_KEY}
+    runOnReadyRestart: yes
+
+    # Grabación automática
+    record: yes
+    recordPath: /recordings/%path/%Y-%m-%dT%H-%M-%S.mp4
+    recordSegmentDuration: 1h
