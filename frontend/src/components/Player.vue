@@ -211,6 +211,22 @@ video { width: 100%; height: 100%; object-fit: contain; background: #000; cursor
   font-family: "JetBrains Mono", "Courier New", monospace;
 }
 
+/* En dispositivos con ratón: barra oculta, aparece al hacer hover */
+@media (hover: hover) {
+  .controls {
+    opacity: 0;
+    transform: translateY(0.4rem);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .player:hover .controls,
+  .player:focus-within .controls {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+}
+
 .btn {
   background: #111;
   color: #fff;
