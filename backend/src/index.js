@@ -12,6 +12,7 @@ import {
   getSelf,
   getStream,
   sendMessage,
+  getSeventvEmotes,
 } from "./twitch.js";
 import { startChat, onMessage, recentMessages } from "./chat.js";
 
@@ -94,6 +95,15 @@ app.get("/api/twitch/stream", async (_req, res) => {
     res.json(await getStream());
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Emotes de 7TV (para pintarlos en el chat) ───────────────
+app.get("/api/twitch/emotes", async (_req, res) => {
+  try {
+    res.json({ emotes: await getSeventvEmotes() });
+  } catch {
+    res.json({ emotes: {} });
   }
 });
 

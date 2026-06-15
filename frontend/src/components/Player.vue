@@ -22,6 +22,7 @@ const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
 let hls = null;
 let raf = null;
+let retry = null;
 
 function liveEdge() {
   if (hls && hls.liveSyncPosition != null) return hls.liveSyncPosition;
@@ -96,14 +97,23 @@ onMounted(() => {
     hls.attachMedia(v);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       hasVideo.value = true;
+      if (retry) clearTimeout(retry);
       v.play().catch(() => {});
     });
     hls.on(Hls.Events.ERROR, (_e, data) => {
-      if (data.fatal) {
-        // reintento básico
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+      if (!data.fatal) return;
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        hls.recoverMediaError();
+        return;
       }
+      // Error de red (típico: el directo aún no está publicando → 404).
+      // Reintentamos cargar el manifest cada 5s hasta que haya stream;
+      // así arranca SOLO cuando empieza el directo, sin recargar la página.
+      if (retry) clearTimeout(retry);
+      retry = setTimeout(() => {
+        hls.loadSource(props.src);
+        hls.startLoad();
+      }, 5000);
     });
   } else if (v.canPlayType("application/vnd.apple.mpegurl")) {
     v.src = props.src;
@@ -121,6 +131,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf);
+  if (retry) clearTimeout(retry);
   if (hls) hls.destroy();
 });
 

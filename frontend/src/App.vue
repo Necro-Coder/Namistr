@@ -110,14 +110,15 @@ body {
 /* ── Layout ───────────────────────────────────────────── */
 .grid {
   display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 1.25rem;
-  max-width: 1600px; margin: 0 auto; padding: 1.25rem;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 400px);
+  gap: 1rem;
+  width: 100%;
+  max-width: 1800px; margin: 0 auto; padding: 1rem;
+  /* el chat (columna derecha) iguala su alto al del vídeo + meta */
+  align-items: stretch;
 }
-@media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
-
-.stage { min-width: 0; }
+.stage { min-width: 0; display: flex; flex-direction: column; }
+.stage > .player { flex: 0 0 auto; }
 .meta {
   border: 2px solid var(--line); border-top: 0;
   padding: 0.8rem 1rem; background: var(--panel);
@@ -126,6 +127,23 @@ body {
 .twlink { color: #b69cff; text-decoration: none; font-size: 0.85rem; font-weight: 700; }
 .twlink:hover { text-decoration: underline; }
 
-.side { height: 78vh; min-height: 420px; position: sticky; top: 5rem; }
-@media (max-width: 1000px) { .side { height: 60vh; position: static; } }
+.side { min-width: 0; min-height: 0; display: flex; }
+.side > * { width: 100%; }
+
+/* ── Tablet: el chat baja debajo ───────────────────────── */
+@media (max-width: 1000px) {
+  .grid {
+    grid-template-columns: 1fr;
+    height: auto;
+    grid-auto-rows: min-content;
+  }
+  .side { height: 55vh; }
+}
+
+/* ── Móvil ─────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .topbar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .grid { padding: 0.6rem; gap: 0.6rem; }
+  .side { height: 60vh; }
+}
 </style>

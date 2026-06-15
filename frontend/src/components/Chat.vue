@@ -7,6 +7,28 @@ const draft = ref("");
 const sending = ref(false);
 const error = ref("");
 const listEl = ref(null);
+const emotes = ref({}); // nombre -> url (7TV)
+
+// Trocea el texto en palabras y sustituye las que sean emotes 7TV
+function renderParts(text) {
+  const parts = [];
+  for (const tok of text.split(/(\s+)/)) {
+    if (!tok) continue;
+    const url = emotes.value[tok];
+    if (url) parts.push({ t: "emote", v: url, alt: tok });
+    else parts.push({ t: "text", v: tok });
+  }
+  return parts;
+}
+
+async function loadEmotes() {
+  try {
+    const r = await fetch("/api/twitch/emotes");
+    emotes.value = (await r.json()).emotes || {};
+  } catch {
+    /* ignore */
+  }
+}
 
 let ws = null;
 let reconnectTimer = null;
@@ -93,6 +115,7 @@ async function send() {
 
 onMounted(() => {
   loadMe();
+  loadEmotes();
   connectWs();
 });
 
@@ -109,7 +132,9 @@ onBeforeUnmount(() => {
     <div ref="listEl" class="messages">
       <p v-for="m in messages" :key="m.id" class="msg">
         <span class="name" :style="{ color: m.color || '#b69cff' }">{{ m.user }}</span>
-        <span class="text">{{ m.text }}</span>
+        <span class="text"><template v-for="(p, i) in renderParts(m.text)" :key="i"><img
+              v-if="p.t === 'emote'" :src="p.v" :alt="p.alt" :title="p.alt" class="emote"
+            /><template v-else>{{ p.v }}</template></template></span>
       </p>
       <p v-if="!messages.length" class="empty">SIN MENSAJES TODAVÍA…</p>
     </div>
@@ -152,6 +177,7 @@ onBeforeUnmount(() => {
 .msg { margin: 0.2rem 0; line-height: 1.4; word-wrap: break-word; font-size: 0.9rem; }
 .name { font-weight: 800; margin-right: 0.4rem; }
 .empty { color: #555; letter-spacing: 0.05em; }
+.emote { height: 1.75em; vertical-align: middle; margin: -0.2em 0.05em; }
 
 .composer { padding: 0.6rem; border-top: 2px solid var(--line); }
 .composer form { display: flex; gap: 0; }

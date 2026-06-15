@@ -114,6 +114,44 @@ export async function refresh(refreshToken) {
   return r.json();
 }
 
+// ── Emotes de 7TV (globales + del canal), cacheados ─────────
+let emotesCache = null;
+let emotesExp = 0;
+
+export async function getSeventvEmotes() {
+  if (emotesCache && Date.now() < emotesExp) return emotesCache;
+  const out = {};
+  const add = (list) => {
+    for (const e of list || []) {
+      if (e?.name && e?.id) {
+        out[e.name] = `https://cdn.7tv.app/emote/${e.id}/2x.webp`;
+      }
+    }
+  };
+  try {
+    const g = await fetch("https://7tv.io/v3/emote-sets/global").then((r) =>
+      r.json(),
+    );
+    add(g.emotes);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const id = await getChannelId();
+    if (id) {
+      const u = await fetch(`https://7tv.io/v3/users/twitch/${id}`).then((r) =>
+        r.json(),
+      );
+      add(u?.emote_set?.emotes);
+    }
+  } catch {
+    /* ignore */
+  }
+  emotesCache = out;
+  emotesExp = Date.now() + 10 * 60_000; // 10 min
+  return out;
+}
+
 // ── Enviar un mensaje al chat como el usuario ───────────────
 export async function sendMessage({ userToken, senderId, message }) {
   const broadcasterId = await getChannelId();
