@@ -26,5 +26,7 @@ RUN npm install -g serve@14
 
 COPY --from=build /app/dist ./dist
 
-EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+EXPOSE 7000
+# tcp://0.0.0.0 = escucha en todas las interfaces, para que nginx
+# (otro contenedor) pueda alcanzarlo por la red de Docker.
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:7000"]
