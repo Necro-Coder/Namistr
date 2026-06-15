@@ -74,13 +74,18 @@ Activa **"Disable chunked encoding"** en la config del tunnel para evitar buffer
 ## OBS (Settings → Stream)
 
 - **Service:** Custom
-- **Server:** `rtmp://100.x.x.x:1935/stream`  ← IP de Tailscale
-- **Stream Key:** `obs?user=obs&pass=TU_PASS`
+- **Server:** `rtmp://100.x.x.x:1935`  ← IP de Tailscale del servidor
+- **Stream Key:** `stream`
+
+Sin usuario/contraseña: el acceso a publicar lo limita Tailscale (solo tu
+tailnet alcanza el 1935). En OBS → Salida, pon **intervalo de fotogramas
+clave = 2s** y un bitrate acorde a tu subida.
 
 ## CI/CD
 
-`push` a `main` → GitHub Actions construye las imágenes `frontend`/`backend` en GHCR
-y el job `deploy` (runner `self-hosted, vps`) hace `pull` + `up -d` con zero downtime.
+`push` a `master` → GitHub Actions construye las imágenes `frontend`/`backend` en GHCR
+y el job `deploy` (runner `self-hosted, vps`) hace `git reset` + `pull` + `up -d` y
+recarga nginx.
 
 ## Notas / pendientes de revisar
 

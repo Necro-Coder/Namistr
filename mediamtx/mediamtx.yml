@@ -11,22 +11,14 @@ hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
 hlsAlwaysRemux: yes
 
-# ── Auth: solo tú puedes publicar ───────────────────────────
-authMethod: internal
-authInternalUsers:
-  - user: obs
-    pass: ${MEDIAMTX_PUBLISH_PASS}
-    ips: []                 # Tailscale ya limita el acceso
-    permissions:
-      - action: publish
-        path: stream
-  # Lectura anónima (Nginx / espectadores HLS)
-  - user: any
-    pass:
-    ips: []
-    permissions:
-      - action: read
-      - action: playback
+# ── Auth ────────────────────────────────────────────────────
+# Sin autenticación a nivel de app: el puerto RTMP (1935) solo es
+# accesible por Tailscale (firewall: zona tailscale), así que la red ya
+# limita quién puede publicar. La lectura HLS es pública a propósito
+# (espectadores vía Cloudflare). Se usan los usuarios por defecto de
+# mediamtx, que además permiten el acceso a la API desde localhost
+# (lo necesita el backend). NO definir authInternalUsers aquí: hacerlo
+# rompía el acceso anónimo de lectura (cookieCheck) y la API.
 
 paths:
   stream:
