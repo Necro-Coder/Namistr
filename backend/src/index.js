@@ -28,31 +28,47 @@ const COOKIE_OPTS = {
 
 app.use(express.json());
 
-// Sesiones en memoria: sid -> datos del usuario + tokens de Twitch.
-// (se pierden al reiniciar el backend; el usuario vuelve a hacer login)
-const sessions = new Map();
-
+// Sesión STATELESS: los datos del usuario y sus tokens de Twitch van
+// firmados dentro de la cookie JWT (httpOnly + Secure). Así la sesión
+// sobrevive a reinicios/deploys del backend y no hay que re-loguear.
 function readSession(req) {
   const cookies = cookie.parse(req.headers.cookie || "");
   if (!cookies.session) return null;
   try {
-    const { sid } = jwt.verify(cookies.session, JWT_SECRET);
-    const s = sessions.get(sid);
-    return s ? { sid, ...s } : null;
+    return jwt.verify(cookies.session, JWT_SECRET);
   } catch {
     return null;
   }
 }
 
-// Devuelve un token de usuario válido, refrescándolo si hace falta
-async function validToken(sid, s) {
-  if (Date.now() < s.expiresAt - 60_000) return s.accessToken;
+function sessionCookie(s) {
+  const token = jwt.sign(
+    {
+      userId: s.userId,
+      login: s.login,
+      displayName: s.displayName,
+      accessToken: s.accessToken,
+      refreshToken: s.refreshToken,
+      expiresAt: s.expiresAt,
+    },
+    JWT_SECRET,
+    { expiresIn: "30d" },
+  );
+  return cookie.serialize("session", token, {
+    ...COOKIE_OPTS,
+    maxAge: 30 * 24 * 3600,
+  });
+}
+
+// Devuelve un token de usuario válido (refrescándolo si caducó) y, si lo
+// refresca, una cookie nueva para reescribir la sesión.
+async function validToken(s) {
+  if (Date.now() < s.expiresAt - 60_000) return { token: s.accessToken };
   const t = await refresh(s.refreshToken);
   s.accessToken = t.access_token;
   s.refreshToken = t.refresh_token || s.refreshToken;
   s.expiresAt = Date.now() + t.expires_in * 1000;
-  sessions.set(sid, s);
-  return s.accessToken;
+  return { token: s.accessToken, cookie: sessionCookie(s) };
 }
 
 // ── Health ──────────────────────────────────────────────────
@@ -102,21 +118,16 @@ app.get("/auth/twitch/callback", async (req, res) => {
     const me = await getSelf(tok.access_token);
     if (!me) return res.status(500).send("no se pudo obtener el usuario");
 
-    const sid = crypto.randomBytes(16).toString("hex");
-    sessions.set(sid, {
+    const session = {
       userId: me.id,
       login: me.login,
       displayName: me.display_name,
       accessToken: tok.access_token,
       refreshToken: tok.refresh_token,
       expiresAt: Date.now() + tok.expires_in * 1000,
-    });
-    const token = jwt.sign({ sid }, JWT_SECRET, { expiresIn: "30d" });
+    };
     res.setHeader("Set-Cookie", [
-      cookie.serialize("session", token, {
-        ...COOKIE_OPTS,
-        maxAge: 30 * 24 * 3600,
-      }),
+      sessionCookie(session),
       cookie.serialize("tw_state", "", { ...COOKIE_OPTS, maxAge: 0 }),
     ]);
     res.redirect("/");
@@ -133,9 +144,7 @@ app.get("/api/me", (req, res) => {
 });
 
 // ── Logout ──────────────────────────────────────────────────
-app.post("/auth/logout", (req, res) => {
-  const s = readSession(req);
-  if (s) sessions.delete(s.sid);
+app.post("/auth/logout", (_req, res) => {
   res.setHeader(
     "Set-Cookie",
     cookie.serialize("session", "", { ...COOKIE_OPTS, maxAge: 0 }),
@@ -150,7 +159,8 @@ app.post("/api/chat/send", async (req, res) => {
   const message = (req.body?.message || "").trim();
   if (!message) return res.status(400).json({ error: "mensaje vacío" });
   try {
-    const token = await validToken(s.sid, sessions.get(s.sid));
+    const { token, cookie: newCookie } = await validToken(s);
+    if (newCookie) res.setHeader("Set-Cookie", newCookie);
     await sendMessage({ userToken: token, senderId: s.userId, message });
     res.json({ ok: true });
   } catch (err) {
@@ -177,6 +187,8 @@ app.get("/api/viewers", async (_req, res) => {
 });
 
 wss.on("connection", (ws) => {
+  ws.isAlive = true;
+  ws.on("pong", () => (ws.isAlive = true));
   // al conectar, manda el historial reciente
   ws.send(JSON.stringify({ type: "history", messages: recentMessages() }));
   const off = onMessage((msg) => {
@@ -186,6 +198,19 @@ wss.on("connection", (ws) => {
   });
   ws.on("close", off);
 });
+
+// Keepalive: ping cada 30s para que Cloudflare no corte la conexión
+// por inactividad (y limpiar las que se quedaron muertas).
+setInterval(() => {
+  for (const ws of wss.clients) {
+    if (ws.isAlive === false) {
+      ws.terminate();
+      continue;
+    }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, 30000);
 
 startChat();
 

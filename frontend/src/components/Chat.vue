@@ -10,6 +10,7 @@ const listEl = ref(null);
 
 let ws = null;
 let reconnectTimer = null;
+const seen = new Set(); // ids ya mostrados → evita duplicados al reconectar
 
 function scrollToBottom() {
   nextTick(() => {
@@ -19,10 +20,18 @@ function scrollToBottom() {
 }
 
 function pushMessages(list) {
-  messages.value.push(...list);
+  let added = false;
+  for (const m of list) {
+    if (seen.has(m.id)) continue; // ya lo teníamos (historial reenviado)
+    seen.add(m.id);
+    messages.value.push(m);
+    added = true;
+  }
+  if (!added) return;
   // limita el tamaño en memoria
   if (messages.value.length > 200) {
-    messages.value.splice(0, messages.value.length - 200);
+    const removed = messages.value.splice(0, messages.value.length - 200);
+    for (const m of removed) seen.delete(m.id);
   }
   scrollToBottom();
 }
