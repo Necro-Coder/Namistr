@@ -64,18 +64,6 @@ services:
     depends_on:
       - nginx
 
-  # ─── GitHub Actions Self-Hosted Runner ────────────────────
-  github-runner:
-    image: myoung34/github-runner:latest
-    container_name: github-runner
-    restart: unless-stopped
-    environment:
-      - ACCESS_TOKEN=${GITHUB_RUNNER_TOKEN}
-      - RUNNER_NAME=vps-runner
-      - REPO_URL=https://github.com/${GHCR_REPO}
-      - LABELS=self-hosted,vps
-      - RUNNER_WORKDIR=/tmp/runner
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/runner:/tmp/runner
-      - /srv/homelab/custom_apps/Namistr:/srv/homelab/custom_apps/Namistr
+  # El runner de GitHub Actions está instalado directamente en el VPS
+  # (/opt/namistr-runner), no como contenedor. Por eso aquí no hay
+  # servicio github-runner: evitamos un runner duplicado.

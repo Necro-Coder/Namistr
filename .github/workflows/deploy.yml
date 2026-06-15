@@ -73,11 +73,14 @@ jobs:
           cd /srv/homelab/custom_apps/Namistr
           sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env
 
-      - name: Pull & redeploy (zero downtime)
+      - name: Pull & redeploy (stack completo)
         run: |
           cd /srv/homelab/custom_apps/Namistr
+          # imágenes frescas de la app
           docker compose pull frontend backend
-          docker compose up -d --no-deps --force-recreate frontend backend
+          # levanta TODO el stack: recrea front/back (cambió IMAGE_TAG) y
+          # arranca nginx/mediamtx/cloudflared si no están corriendo.
+          docker compose up -d --remove-orphans
           docker image prune -f
 
       - name: Smoke test
