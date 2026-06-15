@@ -9,7 +9,7 @@ hlsVariant: lowLatency
 hlsSegmentCount: 7
 hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
-hlsAlwaysRemuxMPEGTS: yes
+hlsAlwaysRemux: yes
 
 # ── Auth: solo tú puedes publicar ───────────────────────────
 authMethod: internal
