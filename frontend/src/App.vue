@@ -28,9 +28,13 @@ function login() {
   window.location.href = "/auth/twitch/login";
 }
 
-async function recheck() {
-  rechecking.value = true;
-  recheckError.value = "";
+// manual = pulsado por el usuario (muestra mensajes). Sin manual = sondeo
+// automático en segundo plano (solo actualiza el estado, en silencio).
+async function recheck(manual = false) {
+  if (manual) {
+    rechecking.value = true;
+    recheckError.value = "";
+  }
   try {
     const r = await fetch("/api/auth/recheck", {
       method: "POST",
@@ -39,14 +43,17 @@ async function recheck() {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || "error al comprobar");
     me.value = { ...me.value, follows: Boolean(d.follows) };
-    if (!d.follows) {
+    if (manual && !d.follows) {
       recheckError.value =
         "Aún no consta que sigas el canal. Si acabas de seguir, espera unos segundos. Si no funciona, vuelve a iniciar sesión (abajo).";
     }
   } catch (e) {
-    recheckError.value = `${e.message}. Prueba a volver a iniciar sesión (abajo).`;
+    // un error de red en el sondeo NO debe echar al usuario
+    if (manual) {
+      recheckError.value = `${e.message}. Prueba a volver a iniciar sesión (abajo).`;
+    }
   } finally {
-    rechecking.value = false;
+    if (manual) rechecking.value = false;
   }
 }
 
@@ -77,12 +84,21 @@ async function poll() {
   }
 }
 
+let recheckTimer = null;
+
 onMounted(() => {
   loadMe();
   poll();
   timer = setInterval(poll, 10000);
+  // Re-verifica el follow cada 45s: si dejan de seguir, se les corta.
+  recheckTimer = setInterval(() => {
+    if (me.value.loggedIn) recheck(false);
+  }, 45000);
 });
-onBeforeUnmount(() => timer && clearInterval(timer));
+onBeforeUnmount(() => {
+  if (timer) clearInterval(timer);
+  if (recheckTimer) clearInterval(recheckTimer);
+});
 </script>
 
 <template>
@@ -118,7 +134,7 @@ onBeforeUnmount(() => timer && clearInterval(timer));
                 :href="`https://twitch.tv/${TWITCH_CHANNEL}`"
                 target="_blank" rel="noopener"
               >SEGUIR EN TWITCH ↗</a>
-              <button class="ghost" :disabled="rechecking" @click="recheck">
+              <button class="ghost" :disabled="rechecking" @click="recheck(true)">
                 {{ rechecking ? "COMPROBANDO…" : "YA TE SIGO → COMPROBAR" }}
               </button>
               <p v-if="recheckError" class="gateerr">{{ recheckError }}</p>
