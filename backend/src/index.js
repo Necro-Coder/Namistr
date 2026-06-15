@@ -1,10 +1,7 @@
 import express from "express";
-import { readdir } from "node:fs/promises";
-import { join } from "node:path";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const RECORDINGS_PATH = process.env.RECORDINGS_PATH || "/recordings";
 const MEDIAMTX_API_URL = process.env.MEDIAMTX_API_URL || "http://127.0.0.1:9997";
 
 app.use(express.json());
@@ -23,23 +20,6 @@ app.get("/api/stream/status", async (_req, res) => {
     res.json({ live: Boolean(data.ready), source: data.source ?? null });
   } catch (err) {
     res.json({ live: false, error: err.message });
-  }
-});
-
-// Listado de grabaciones disponibles
-app.get("/api/recordings", async (_req, res) => {
-  try {
-    const entries = await readdir(join(RECORDINGS_PATH, "stream"), {
-      withFileTypes: true,
-    }).catch(() => []);
-    const files = entries
-      .filter((e) => e.isFile() && e.name.endsWith(".mp4"))
-      .map((e) => e.name)
-      .sort()
-      .reverse();
-    res.json({ recordings: files });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 

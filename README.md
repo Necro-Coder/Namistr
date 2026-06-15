@@ -4,24 +4,24 @@ Plataforma de streaming self-hosted: **Tailscale** para la entrada RTMP (OBS →
 y **Cloudflare Tunnel** para la salida web HTTPS (servidor → espectadores).
 
 ```
-[OBS] ──RTMP──► [IP Tailscale 100.x.x.x:1935] ──► [MediaMTX] ──┬─ relay ─► [Twitch]
-                                                               ├─ HLS ──► [Nginx] ─► [CF Tunnel] ─► stream.tudominio.com
-                                                               └─ record ─► /recordings
+[OBS canvas anime] ──RTMP (web)──► [IP Tailscale 100.x.x.x:1935] ──► [MediaMTX]
+                                                                         └─ HLS ─► [Nginx] ─► [CF Tunnel] ─► necro-coder.site
+[OBS canvas sin anime] ──RTMP──────────────────────────────────────────────────────────────► [Twitch]  (directo)
 ```
 
-**Regla:** Tailscale = entrada del stream. Cloudflare = salida web.
+**Regla:** Tailscale = entrada del stream a la web. Cloudflare = salida web.
+La escena de Twitch va directa OBS→Twitch, no pasa por el servidor.
 
 ## Estructura
 
 ```
 .
 ├── .github/workflows/deploy.yml   # build (GHCR) + deploy (runner del VPS)
-├── docker-compose.yml             # mediamtx, nginx, frontend, backend, cloudflared, runner
-├── mediamtx/mediamtx.yml          # RTMP + HLS LL + relay Twitch + grabación
+├── docker-compose.yml             # mediamtx, nginx, frontend, backend, cloudflared
+├── mediamtx/mediamtx.yml          # RTMP + HLS low-latency (canal web)
 ├── nginx/conf.d/default.conf      # reverse proxy web / HLS / API
 ├── frontend/                      # Vue 3 + Vite + hls.js
 ├── backend/                       # Node + Express (/health, /api/...)
-├── recordings/                    # volumen persistente (gitignored)
 └── .env.example
 ```
 
@@ -110,4 +110,3 @@ recarga nginx.
   el dominio, basta relanzar el workflow (no hace falta tocar código).
 - **Nginx ↔ backend/mediamtx:** el backend y mediamtx usan `network_mode: host`,
   así que Nginx los alcanza vía `host.docker.internal` (`extra_hosts: host-gateway`).
-- **`recordPath`/`%path`:** las grabaciones quedan en `recordings/stream/`.

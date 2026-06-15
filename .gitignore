@@ -2,10 +2,6 @@
 .env
 *.local
 
-# Grabaciones (volumen persistente, no versionar)
-recordings/*
-!recordings/.gitkeep
-
 # Node
 node_modules/
 dist/

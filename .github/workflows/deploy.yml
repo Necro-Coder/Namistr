@@ -61,7 +61,7 @@ jobs:
 
     steps:
       # Sincroniza el directorio de despliegue del VPS con master.
-      # (el .env y recordings están gitignored, no se tocan)
+      # (el .env está gitignored, no se toca)
       - name: Sync repo en el VPS
         run: |
           cd /srv/homelab/custom_apps/Namistr

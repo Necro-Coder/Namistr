@@ -10,7 +10,6 @@ services:
     # y para que ffmpeg reenvíe a Twitch sin restricciones de red
     volumes:
       - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
-      - ./recordings:/recordings
     env_file: .env
 
   # ─── Reverse Proxy ────────────────────────────────────────
@@ -44,13 +43,10 @@ services:
     restart: unless-stopped
     environment:
       - MEDIAMTX_API_URL=http://127.0.0.1:9997
-      - RECORDINGS_PATH=/recordings
       - PORT=3001
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
       - JWT_SECRET=${JWT_SECRET}
-    volumes:
-      - ./recordings:/recordings
     network_mode: host
 
   # ─── Cloudflare Tunnel ────────────────────────────────────
