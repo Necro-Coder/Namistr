@@ -31,7 +31,7 @@ services:
 
   # ─── Frontend Vue.js ──────────────────────────────────────
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_REPO}/frontend:${IMAGE_TAG:-latest}
     container_name: frontend
     restart: unless-stopped
     # Las VITE_* NO van aquí: son variables de build, ya horneadas en la
@@ -39,7 +39,7 @@ services:
 
   # ─── Backend Node.js ──────────────────────────────────────
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_REPO}/backend:${IMAGE_TAG:-latest}
     container_name: backend
     restart: unless-stopped
     environment:
@@ -72,7 +72,7 @@ services:
     environment:
       - ACCESS_TOKEN=${GITHUB_RUNNER_TOKEN}
       - RUNNER_NAME=vps-runner
-      - REPO_URL=https://github.com/${GITHUB_REPOSITORY}
+      - REPO_URL=https://github.com/${GHCR_REPO}
       - LABELS=self-hosted,vps
       - RUNNER_WORKDIR=/tmp/runner
     volumes:
