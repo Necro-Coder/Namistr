@@ -2,7 +2,9 @@
 import { ref, computed } from "vue";
 
 const channel = import.meta.env.VITE_TWITCH_CHANNEL || "";
-const open = ref(true);
+// Arranca PLEGADO: solo se reproduce (y cuenta como view) si el usuario
+// lo abre a propósito → uso 100% legítimo, sin views pasivas/forzadas.
+const open = ref(false);
 
 // El embed de Twitch exige el parámetro `parent` = hostname de la página.
 // Muteado por defecto para no solapar audio con el reproductor del anime.
@@ -15,9 +17,9 @@ const src = computed(() => {
 
 <template>
   <section class="twitch" v-if="channel">
-    <header class="head">
-      <span>// TWITCH · APÓYAME AQUÍ</span>
-      <button class="toggle" @click="open = !open">{{ open ? "▾" : "▸" }}</button>
+    <header class="head" @click="open = !open">
+      <span>// TWITCH · {{ open ? "APÓYAME AQUÍ" : "ÁBRELO PARA APOYARME ▸" }}</span>
+      <button class="toggle">{{ open ? "▾" : "▸" }}</button>
     </header>
     <div v-show="open" class="frame">
       <iframe
@@ -45,7 +47,9 @@ const src = computed(() => {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.5rem 0.7rem; border-bottom: 2px solid var(--line);
   font-weight: 800; letter-spacing: 0.06em; font-size: 0.8rem;
+  cursor: pointer; user-select: none;
 }
+.head:hover { background: #111; }
 .toggle {
   background: #111; color: var(--fg); border: 2px solid var(--line);
   cursor: pointer; font: inherit; font-weight: 800; padding: 0 0.4rem; line-height: 1.4;
