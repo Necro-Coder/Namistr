@@ -52,13 +52,21 @@ docker compose ps
 
 ## Cloudflare Tunnel (Zero Trust → Networks → Tunnels)
 
-| Subdominio            | Tipo | URL              |
-|-----------------------|------|------------------|
-| `stream.tudominio.com`| HTTP | `localhost:8080` |
-| `hls.tudominio.com`   | HTTP | `localhost:8080` |
-| `api.tudominio.com`   | HTTP | `localhost:8080` |
+Un solo dominio con rutas → **un único hostname** apuntando al Nginx local:
 
-Activa **"Disable chunked encoding"** en `hls.tudominio.com` para evitar buffering.
+| Hostname          | Tipo | URL              |
+|-------------------|------|------------------|
+| `necrocoder.site` | HTTP | `localhost:8080` |
+
+Nginx reparte internamente por ruta:
+
+| Ruta                 | Destino           |
+|----------------------|-------------------|
+| `/`                  | frontend (Vue)    |
+| `/api/`, `/auth/`    | backend (Node)    |
+| `/hls/`              | MediaMTX (HLS)    |
+
+Activa **"Disable chunked encoding"** en la config del tunnel para evitar buffering en HLS.
 
 ## OBS (Settings → Stream)
 
@@ -73,8 +81,9 @@ y el job `deploy` (runner `self-hosted, vps`) hace `pull` + `up -d` con zero dow
 
 ## Notas / pendientes de revisar
 
-- **`server_name` en Nginx:** cambia `tudominio.com` por tu dominio real en
-  `nginx/conf.d/default.conf` (3 bloques).
+- **Nginx no hornea el dominio:** usa `server_name _` (default server), así que
+  responde a cualquier Host que le llegue por el tunnel. No hay que editarlo al
+  cambiar de dominio.
 - **VITE_\* (resuelto):** se pasan como `build-args` en el workflow, leídos de las
   **Variables de GitHub**. Configúralas en
   *Repo → Settings → Secrets and variables → Actions → Variables*:

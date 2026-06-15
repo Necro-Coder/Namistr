@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount, ref } from "vue";
 import Hls from "hls.js";
 
-const HLS_URL = import.meta.env.VITE_HLS_URL || "/stream/index.m3u8";
+const HLS_URL = import.meta.env.VITE_HLS_URL || "/hls/stream/index.m3u8";
 const API_URL = import.meta.env.VITE_API_URL || "";
 const TWITCH_CHANNEL = import.meta.env.VITE_TWITCH_CHANNEL || "";
 

@@ -12,6 +12,9 @@ dist/
 npm-debug.log*
 .vite/
 
+# Memoria interna de Claude Code (no es parte del proyecto)
+.claude/projects/
+
 # Editor / OS
 .DS_Store
 Thumbs.db
