@@ -185,6 +185,7 @@ app.post("/api/auth/recheck", async (req, res) => {
     res.setHeader("Set-Cookie", sessionCookie(s));
     res.json({ follows: s.follows });
   } catch (err) {
+    console.warn("recheck follows error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

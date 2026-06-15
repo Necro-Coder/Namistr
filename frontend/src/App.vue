@@ -12,6 +12,7 @@ const webViewers = ref(0);
 const twitchViewers = ref(null);
 const me = ref({ loggedIn: false, follows: false });
 const rechecking = ref(false);
+const recheckError = ref("");
 let timer = null;
 
 async function loadMe() {
@@ -29,18 +30,34 @@ function login() {
 
 async function recheck() {
   rechecking.value = true;
+  recheckError.value = "";
   try {
     const r = await fetch("/api/auth/recheck", {
       method: "POST",
       credentials: "include",
     });
     const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "error al comprobar");
     me.value = { ...me.value, follows: Boolean(d.follows) };
-  } catch {
-    /* ignore */
+    if (!d.follows) {
+      recheckError.value =
+        "Aún no consta que sigas el canal. Si acabas de seguir, espera unos segundos. Si no funciona, vuelve a iniciar sesión (abajo).";
+    }
+  } catch (e) {
+    recheckError.value = `${e.message}. Prueba a volver a iniciar sesión (abajo).`;
   } finally {
     rechecking.value = false;
   }
+}
+
+// Cierra sesión y entra de nuevo (concede el permiso de follows si falta)
+async function reLogin() {
+  try {
+    await fetch("/auth/logout", { method: "POST", credentials: "include" });
+  } catch {
+    /* ignore */
+  }
+  window.location.href = "/auth/twitch/login";
 }
 
 async function poll() {
@@ -103,6 +120,10 @@ onBeforeUnmount(() => timer && clearInterval(timer));
               >SEGUIR EN TWITCH ↗</a>
               <button class="ghost" :disabled="rechecking" @click="recheck">
                 {{ rechecking ? "COMPROBANDO…" : "YA TE SIGO → COMPROBAR" }}
+              </button>
+              <p v-if="recheckError" class="gateerr">{{ recheckError }}</p>
+              <button class="ghost relogin" @click="reLogin">
+                ↻ VOLVER A INICIAR SESIÓN
               </button>
             </template>
           </div>
@@ -203,6 +224,11 @@ body {
   color: var(--fg); font-weight: 700; font-family: var(--mono); cursor: pointer;
 }
 .ghost:hover { border-color: #fff; }
+.ghost.relogin { color: var(--dim); }
+.gateerr {
+  margin: 0.7rem 0 0 !important; color: #ffb454 !important;
+  font-size: 0.78rem !important; line-height: 1.4;
+}
 .meta {
   border: 2px solid var(--line); border-top: 0;
   padding: 0.8rem 1rem; background: var(--panel);
