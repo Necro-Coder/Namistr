@@ -10,7 +10,38 @@ const TWITCH_CHANNEL = import.meta.env.VITE_TWITCH_CHANNEL || "";
 const live = ref(false);
 const webViewers = ref(0);
 const twitchViewers = ref(null);
+const me = ref({ loggedIn: false, follows: false });
+const rechecking = ref(false);
 let timer = null;
+
+async function loadMe() {
+  try {
+    const r = await fetch("/api/me", { credentials: "include" });
+    me.value = await r.json();
+  } catch {
+    me.value = { loggedIn: false, follows: false };
+  }
+}
+
+function login() {
+  window.location.href = "/auth/twitch/login";
+}
+
+async function recheck() {
+  rechecking.value = true;
+  try {
+    const r = await fetch("/api/auth/recheck", {
+      method: "POST",
+      credentials: "include",
+    });
+    const d = await r.json();
+    me.value = { ...me.value, follows: Boolean(d.follows) };
+  } catch {
+    /* ignore */
+  } finally {
+    rechecking.value = false;
+  }
+}
 
 async function poll() {
   try {
@@ -30,6 +61,7 @@ async function poll() {
 }
 
 onMounted(() => {
+  loadMe();
   poll();
   timer = setInterval(poll, 10000);
 });
@@ -50,7 +82,32 @@ onBeforeUnmount(() => timer && clearInterval(timer));
 
     <main class="grid">
       <section class="stage">
-        <Player :src="HLS_URL" />
+        <Player v-if="me.loggedIn && me.follows" :src="HLS_URL" />
+
+        <!-- Gate: solo seguidores logueados pueden ver -->
+        <div v-else class="gate">
+          <div class="gatebox">
+            <h2>// CONTENIDO PARA SEGUIDORES</h2>
+            <template v-if="!me.loggedIn">
+              <p>Inicia sesión con Twitch para acceder al directo.</p>
+              <button class="cta" @click="login">INICIAR SESIÓN CON TWITCH</button>
+            </template>
+            <template v-else>
+              <p>
+                Sigue a <strong>{{ TWITCH_CHANNEL }}</strong> en Twitch para ver el directo.
+              </p>
+              <a
+                class="cta"
+                :href="`https://twitch.tv/${TWITCH_CHANNEL}`"
+                target="_blank" rel="noopener"
+              >SEGUIR EN TWITCH ↗</a>
+              <button class="ghost" :disabled="rechecking" @click="recheck">
+                {{ rechecking ? "COMPROBANDO…" : "YA TE SIGO → COMPROBAR" }}
+              </button>
+            </template>
+          </div>
+        </div>
+
         <div class="meta">
           <h1>// EMISIÓN EN DIRECTO</h1>
           <a
@@ -121,6 +178,31 @@ body {
 }
 .stage { min-width: 0; display: flex; flex-direction: column; }
 .stage > .player { flex: 0 0 auto; }
+
+/* ── Gate (no seguidores) ─────────────────────────────── */
+.gate {
+  aspect-ratio: 16 / 9; border: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  background:
+    repeating-linear-gradient(45deg, #0a0a0a 0 12px, #000 12px 24px);
+}
+.gatebox { text-align: center; padding: 1.5rem; max-width: 460px; }
+.gatebox h2 { margin: 0 0 1rem; letter-spacing: 0.06em; }
+.gatebox p { color: var(--dim); margin: 0 0 1.2rem; line-height: 1.5; }
+.gatebox strong { color: var(--fg); }
+.cta {
+  display: inline-block; width: 100%; box-sizing: border-box;
+  padding: 0.8rem 1rem; border: 2px solid #9147ff; background: #9147ff;
+  color: #fff; font-weight: 800; font-family: var(--mono); letter-spacing: 0.04em;
+  text-decoration: none; cursor: pointer; text-align: center;
+}
+.cta:hover { background: #000; color: #9147ff; }
+.ghost {
+  display: block; width: 100%; margin-top: 0.6rem;
+  padding: 0.6rem 1rem; border: 2px solid var(--line); background: #000;
+  color: var(--fg); font-weight: 700; font-family: var(--mono); cursor: pointer;
+}
+.ghost:hover { border-color: #fff; }
 .meta {
   border: 2px solid var(--line); border-top: 0;
   padding: 0.8rem 1rem; background: var(--panel);

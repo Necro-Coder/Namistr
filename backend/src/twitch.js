@@ -8,9 +8,9 @@ const REDIRECT_URI =
   "https://necro-coder.site/auth/twitch/callback";
 export const CHANNEL = (process.env.TWITCH_CHANNEL || "").toLowerCase();
 
-// Scopes que pedimos al usuario: solo poder escribir en el chat.
-// (la lectura del chat es anónima, no necesita permiso del usuario)
-const SCOPES = ["user:write:chat"];
+// Scopes que pedimos al usuario: escribir en el chat + leer a quién sigue
+// (para comprobar que te sigue antes de dejarle ver el directo).
+const SCOPES = ["user:write:chat", "user:read:follows"];
 
 const HELIX = "https://api.twitch.tv/helix";
 const OAUTH = "https://id.twitch.tv/oauth2";
@@ -61,6 +61,18 @@ export async function getChannelId() {
 export async function getSelf(userToken) {
   const data = await helix("/users", { token: userToken });
   return data.data?.[0] ?? null;
+}
+
+// ¿El usuario sigue al canal? (el propio streamer siempre puede)
+export async function checkFollows(userToken, userId) {
+  const broadcasterId = await getChannelId();
+  if (!broadcasterId) return false;
+  if (userId === broadcasterId) return true;
+  const data = await helix("/channels/followed", {
+    token: userToken,
+    params: { user_id: userId, broadcaster_id: broadcasterId },
+  });
+  return (data.data?.length ?? 0) > 0;
 }
 
 // ── Estado del stream en Twitch (viewers, título...) ────────

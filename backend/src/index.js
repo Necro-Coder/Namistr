@@ -13,6 +13,7 @@ import {
   getStream,
   sendMessage,
   getSeventvEmotes,
+  checkFollows,
 } from "./twitch.js";
 import { startChat, onMessage, recentMessages } from "./chat.js";
 
@@ -48,6 +49,7 @@ function sessionCookie(s) {
       userId: s.userId,
       login: s.login,
       displayName: s.displayName,
+      follows: s.follows,
       accessToken: s.accessToken,
       refreshToken: s.refreshToken,
       expiresAt: s.expiresAt,
@@ -128,10 +130,18 @@ app.get("/auth/twitch/callback", async (req, res) => {
     const me = await getSelf(tok.access_token);
     if (!me) return res.status(500).send("no se pudo obtener el usuario");
 
+    let follows = false;
+    try {
+      follows = await checkFollows(tok.access_token, me.id);
+    } catch {
+      /* si falla, queda en false (no podrá ver hasta recomprobar) */
+    }
+
     const session = {
       userId: me.id,
       login: me.login,
       displayName: me.display_name,
+      follows,
       accessToken: tok.access_token,
       refreshToken: tok.refresh_token,
       expiresAt: Date.now() + tok.expires_in * 1000,
@@ -149,8 +159,34 @@ app.get("/auth/twitch/callback", async (req, res) => {
 // ── Quién soy ───────────────────────────────────────────────
 app.get("/api/me", (req, res) => {
   const s = readSession(req);
-  if (!s) return res.json({ loggedIn: false });
-  res.json({ loggedIn: true, login: s.login, displayName: s.displayName });
+  if (!s) return res.json({ loggedIn: false, follows: false });
+  res.json({
+    loggedIn: true,
+    login: s.login,
+    displayName: s.displayName,
+    follows: Boolean(s.follows),
+  });
+});
+
+// ── Gate del stream: ¿puede ver? (lo usa nginx auth_request) ─
+app.get("/api/auth/can-watch", (req, res) => {
+  const s = readSession(req);
+  if (s && s.follows) return res.status(204).end();
+  res.status(403).end();
+});
+
+// ── Recomprobar el follow (botón "ya te sigo") ──────────────
+app.post("/api/auth/recheck", async (req, res) => {
+  const s = readSession(req);
+  if (!s) return res.status(401).json({ error: "no has iniciado sesión" });
+  try {
+    const { token } = await validToken(s);
+    s.follows = await checkFollows(token, s.userId);
+    res.setHeader("Set-Cookie", sessionCookie(s));
+    res.json({ follows: s.follows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Logout ──────────────────────────────────────────────────
