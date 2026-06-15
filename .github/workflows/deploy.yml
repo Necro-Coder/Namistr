@@ -81,6 +81,10 @@ jobs:
           # levanta TODO el stack: recrea front/back (cambió IMAGE_TAG) y
           # arranca nginx/mediamtx/cloudflared si no están corriendo.
           docker compose up -d --remove-orphans
+          # nginx NO se recrea (su imagen/def no cambian), pero su config
+          # montada sí pudo cambiar con el git reset → recargar para tomarla.
+          docker compose exec -T nginx nginx -s reload \
+            || docker compose up -d --force-recreate nginx
           docker image prune -f
 
       - name: Smoke test
