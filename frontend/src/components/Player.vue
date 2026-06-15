@@ -247,4 +247,12 @@ video { width: 100%; height: 100%; object-fit: contain; background: #000; cursor
 }
 .menu li { padding: 0.35rem 0.6rem; cursor: pointer; font-weight: 700; }
 .menu li:hover, .menu li.active { background: #fff; color: #000; }
+
+/* Móvil estrecho: sin slider de volumen y controles más compactos */
+@media (max-width: 480px) {
+  .controls { gap: 0.3rem; padding: 0.4rem; }
+  .vol input { display: none; }
+  .live { padding: 0.35rem 0.45rem; font-size: 0.7rem; letter-spacing: 0; }
+  .btn { padding: 0.35rem 0.5rem; }
+}
 </style>

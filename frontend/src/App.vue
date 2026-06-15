@@ -225,13 +225,33 @@ body {
     height: auto;
     grid-auto-rows: min-content;
   }
-  .side { height: 55vh; }
+  /* al apilar, el chat lleva alto propio (no se aplasta por el embed) */
+  .side { height: auto; }
+  .side .chat { height: 55vh; flex: none; }
 }
 
 /* ── Móvil ─────────────────────────────────────────────── */
 @media (max-width: 560px) {
-  .topbar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .grid { padding: 0.6rem; gap: 0.6rem; }
-  .side { height: 60vh; }
+  .topbar { flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 0.7rem 0.9rem; }
+  .grid { padding: 0.6rem; gap: 0.7rem; }
+  .side { height: auto; }
+  .side .chat { height: 60vh; flex: none; }
+}
+
+/* ── Móvil estrecho (≤430px) ───────────────────────────── */
+@media (max-width: 440px) {
+  .topbar { padding: 0.6rem 0.7rem; }
+  .brand { font-size: 1.1rem; letter-spacing: 0.1em; }
+  .status { gap: 0.35rem; }
+  .badge, .count { font-size: 0.66rem; padding: 0.2rem 0.4rem; }
+  .grid { padding: 0.5rem; gap: 0.6rem; }
+  .meta { padding: 0.6rem 0.7rem; }
+  .meta h1 { font-size: 0.82rem; }
+  .twlink { font-size: 0.75rem; }
+  .gatebox { padding: 1rem; }
+  .gatebox h2 { font-size: 0.9rem; }
+  .gatebox p { font-size: 0.85rem; }
+  .cta { padding: 0.7rem; font-size: 0.8rem; }
+  .side .chat { height: 56vh; }
 }
 </style>
