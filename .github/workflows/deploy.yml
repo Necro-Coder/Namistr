@@ -64,12 +64,12 @@ jobs:
 
       - name: Update IMAGE_TAG in .env
         run: |
-          cd /opt/anime-stream
+          cd /srv/homelab/custom_apps/Namistr
           sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env
 
       - name: Pull & redeploy (zero downtime)
         run: |
-          cd /opt/anime-stream
+          cd /srv/homelab/custom_apps/Namistr
           docker compose pull frontend backend
           docker compose up -d --no-deps --force-recreate frontend backend
           docker image prune -f

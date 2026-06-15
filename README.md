@@ -37,8 +37,9 @@ tailscale up
 tailscale ip -4          # anota la IP 100.x.x.x
 
 # 3. Clonar y configurar
-git clone https://github.com/TU_USUARIO/anime-stream.git /opt/anime-stream
-cd /opt/anime-stream
+#    El deploy del CI espera el proyecto en /srv/homelab/custom_apps/Namistr
+git clone https://github.com/Necro-Coder/Namistr.git /srv/homelab/custom_apps/Namistr
+cd /srv/homelab/custom_apps/Namistr
 cp .env.example .env && nano .env
 
 # 4. Registrar el runner self-hosted
