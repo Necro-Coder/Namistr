@@ -53,11 +53,13 @@ docker compose ps
 
 ## Cloudflare Tunnel (Zero Trust → Networks → Tunnels)
 
-Un solo dominio con rutas → **un único hostname** apuntando al Nginx local:
+Un solo dominio con rutas → **un único Public Hostname** apuntando a Nginx.
+Como cloudflared corre en contenedor, el Service va a `http://nginx:80`
+(misma red Docker), NO a `localhost:8080`:
 
-| Hostname          | Tipo | URL              |
-|-------------------|------|------------------|
-| `necrocoder.site` | HTTP | `localhost:8080` |
+| Public Hostname    | Service           |
+|--------------------|-------------------|
+| `necro-coder.site` | `http://nginx:80` |
 
 Nginx reparte internamente por ruta:
 
