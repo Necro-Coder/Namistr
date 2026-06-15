@@ -4,11 +4,13 @@ hlsAddress: :8888           # Nginx proxea este puerto
 apiAddress: :9997           # Solo accesible internamente (127.0.0.1)
 api: yes
 
-# ── HLS low-latency ─────────────────────────────────────────
-hlsVariant: lowLatency
+# ── HLS estándar (robusto) ──────────────────────────────────
+# fmp4 en vez de lowLatency: el LL-HLS se rompía con fuentes de fps
+# no estándar (parts de duración fluctuante) y dejaba el player colgado.
+# Coste: ~unos segundos de latencia, irrelevante para ver anime.
+hlsVariant: fmp4
 hlsSegmentCount: 7
 hlsSegmentDuration: 1s
-hlsPartDuration: 200ms
 hlsAlwaysRemux: yes
 
 # ── Auth ────────────────────────────────────────────────────

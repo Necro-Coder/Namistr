@@ -26,7 +26,7 @@ onMounted(() => {
 
   const el = video.value;
   if (Hls.isSupported()) {
-    hls = new Hls({ lowLatencyMode: true });
+    hls = new Hls({ lowLatencyMode: false });
     hls.loadSource(HLS_URL);
     hls.attachMedia(el);
   } else if (el.canPlayType("application/vnd.apple.mpegurl")) {
