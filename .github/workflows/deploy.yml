@@ -60,7 +60,13 @@ jobs:
     runs-on: [self-hosted, vps]   # el runner que corre en el VPS
 
     steps:
-      - uses: actions/checkout@v4
+      # Sincroniza el directorio de despliegue del VPS con master.
+      # (el .env y recordings están gitignored, no se tocan)
+      - name: Sync repo en el VPS
+        run: |
+          cd /srv/homelab/custom_apps/Namistr
+          git fetch origin master
+          git reset --hard origin/master
 
       - name: Update IMAGE_TAG in .env
         run: |
@@ -76,6 +82,7 @@ jobs:
 
       - name: Smoke test
         run: |
+          cd /srv/homelab/custom_apps/Namistr
           sleep 8
           curl -sf https://${{ vars.DOMAIN }}/health \
             || (docker compose logs --tail=50 backend && exit 1)
