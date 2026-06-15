@@ -71,15 +71,21 @@ Nginx reparte internamente por ruta:
 
 Activa **"Disable chunked encoding"** en la config del tunnel para evitar buffering en HLS.
 
-## OBS (Settings → Stream)
+## OBS — dos escenas distintas
 
-- **Service:** Custom
-- **Server:** `rtmp://100.x.x.x:1935`  ← IP de Tailscale del servidor
-- **Stream Key:** `stream`
+Dos salidas independientes desde OBS (canvas principal + plugin Aitum Vertical
+para un segundo canvas):
 
-Sin usuario/contraseña: el acceso a publicar lo limita Tailscale (solo tu
-tailnet alcanza el 1935). En OBS → Salida, pon **intervalo de fotogramas
-clave = 2s** y un bitrate acorde a tu subida.
+| Salida | Escena | Server | Key |
+|--------|--------|--------|-----|
+| Principal (Settings → Stream) | CON anime | `rtmp://100.x.x.x:1935` (Tailscale) | `web` |
+| Aitum Vertical (2º canvas) | SIN anime | `rtmp://live.twitch.tv/app` | tu Twitch stream key |
+
+- El canal **web** no lleva usuario/contraseña: el acceso lo limita Tailscale
+  (solo tu tailnet alcanza el 1935). Se sirve como HLS y se graba.
+- El canvas de **Twitch** emite **directo** a Twitch, sin pasar por el servidor:
+  así controlas Twitch por separado (puedes emitir a Twitch sin web, y viceversa).
+- En ambas salidas: **intervalo de fotogramas clave = 2s**, CBR.
 
 ## CI/CD
 
