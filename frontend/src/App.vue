@@ -107,9 +107,7 @@ onBeforeUnmount(() => {
       <div class="brand">NAMISTR</div>
       <div class="status">
         <span class="badge" :class="{ on: live }">{{ live ? "EN DIRECTO" : "OFFLINE" }}</span>
-        <span class="count">WEB · {{ webViewers }}</span>
         <span v-if="twitchViewers !== null" class="count tw">TWITCH · {{ twitchViewers }}</span>
-        <span class="count total">TOTAL · {{ webViewers + (twitchViewers || 0) }}</span>
       </div>
     </header>
 
@@ -149,10 +147,10 @@ onBeforeUnmount(() => {
           <h1>// EMISIÓN EN DIRECTO</h1>
           <a
             v-if="TWITCH_CHANNEL"
-            class="twlink"
+            class="twbtn"
             :href="`https://twitch.tv/${TWITCH_CHANNEL}`"
             target="_blank" rel="noopener"
-          >TAMBIÉN EN TWITCH.TV/{{ TWITCH_CHANNEL.toUpperCase() }} ↗</a>
+          >{{ TWITCH_CHANNEL }}</a>
         </div>
       </section>
 
@@ -249,9 +247,14 @@ body {
   border: 2px solid var(--line); border-top: 0;
   padding: 0.8rem 1rem; background: var(--panel);
 }
-.meta h1 { margin: 0 0 0.4rem; font-size: 1rem; letter-spacing: 0.06em; }
-.twlink { color: #b69cff; text-decoration: none; font-size: 0.85rem; font-weight: 700; }
-.twlink:hover { text-decoration: underline; }
+.meta h1 { margin: 0 0 0.6rem; font-size: 1rem; letter-spacing: 0.06em; }
+.twbtn {
+  display: inline-block; padding: 0.45rem 0.9rem;
+  border: 2px solid #9147ff; background: #9147ff; color: #fff;
+  font-weight: 800; font-family: var(--mono); letter-spacing: 0.04em;
+  text-decoration: none; text-transform: uppercase; cursor: pointer;
+}
+.twbtn:hover { background: #000; color: #9147ff; }
 
 .side {
   min-width: 0; min-height: 0;
