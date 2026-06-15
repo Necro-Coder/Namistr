@@ -155,8 +155,10 @@ onBeforeUnmount(() => {
       </section>
 
       <aside class="side">
-        <TwitchEmbed />
-        <Chat />
+        <div class="sideinner">
+          <TwitchEmbed />
+          <Chat />
+        </div>
       </aside>
     </main>
   </div>
@@ -256,12 +258,16 @@ body {
 }
 .twbtn:hover { background: #000; color: #9147ff; }
 
-.side {
-  min-width: 0; min-height: 0;
+/* La columna del chat: su alto lo marca el vídeo, no su propio contenido.
+   El contenido va en .sideinner posicionado absoluto, así el chat no
+   "empuja" la página: tiene alto fijo y los mensajes scrollean por dentro. */
+.side { min-width: 0; position: relative; }
+.sideinner {
+  position: absolute; inset: 0;
   display: flex; flex-direction: column; gap: 1rem;
 }
-.side > * { width: 100%; }
-.side .chat { flex: 1; min-height: 0; }
+.sideinner > * { width: 100%; }
+.sideinner .chat { flex: 1; min-height: 0; }
 
 /* ── Tablet: el chat baja debajo ───────────────────────── */
 @media (max-width: 1000px) {
@@ -270,17 +276,17 @@ body {
     height: auto;
     grid-auto-rows: min-content;
   }
-  /* al apilar, el chat lleva alto propio (no se aplasta por el embed) */
-  .side { height: auto; }
-  .side .chat { height: 55vh; flex: none; }
+  /* al apilar: flujo normal (sin absolute) y el chat con alto propio */
+  .side { position: static; height: auto; }
+  .sideinner { position: static; }
+  .sideinner .chat { height: 55vh; flex: none; }
 }
 
 /* ── Móvil ─────────────────────────────────────────────── */
 @media (max-width: 560px) {
   .topbar { flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 0.7rem 0.9rem; }
   .grid { padding: 0.6rem; gap: 0.7rem; }
-  .side { height: auto; }
-  .side .chat { height: 60vh; flex: none; }
+  .sideinner .chat { height: 60vh; flex: none; }
 }
 
 /* ── Móvil estrecho (≤430px) ───────────────────────────── */
@@ -297,6 +303,6 @@ body {
   .gatebox h2 { font-size: 0.9rem; }
   .gatebox p { font-size: 0.85rem; }
   .cta { padding: 0.7rem; font-size: 0.8rem; }
-  .side .chat { height: 56vh; }
+  .sideinner .chat { height: 56vh; }
 }
 </style>

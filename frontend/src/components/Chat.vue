@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
   padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--line);
   font-weight: 800; letter-spacing: 0.08em;
 }
-.messages { flex: 1; overflow-y: auto; padding: 0.6rem; }
+.messages { flex: 1; min-height: 0; overflow-y: auto; padding: 0.6rem; }
 .msg { margin: 0.2rem 0; line-height: 1.4; word-wrap: break-word; font-size: 0.9rem; }
 .name { font-weight: 800; margin-right: 0.4rem; }
 .empty { color: #555; letter-spacing: 0.05em; }
