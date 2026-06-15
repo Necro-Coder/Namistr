@@ -17,7 +17,7 @@ app.get("/health", (_req, res) => {
 // Estado del stream en vivo (consulta la API de MediaMTX)
 app.get("/api/stream/status", async (_req, res) => {
   try {
-    const r = await fetch(`${MEDIAMTX_API_URL}/v3/paths/get/stream`);
+    const r = await fetch(`${MEDIAMTX_API_URL}/v3/paths/get/web`);
     if (!r.ok) return res.json({ live: false });
     const data = await r.json();
     res.json({ live: Boolean(data.ready), source: data.source ?? null });

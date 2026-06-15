@@ -48,7 +48,7 @@ jobs:
           # (Repo → Settings → Secrets and variables → Actions → Variables).
           # El backend los ignora; solo afectan al build del frontend.
           build-args: |
-            VITE_HLS_URL=https://${{ vars.DOMAIN }}/hls/stream/index.m3u8
+            VITE_HLS_URL=https://${{ vars.DOMAIN }}/hls/web/index.m3u8
             VITE_API_URL=https://${{ vars.DOMAIN }}
             VITE_TWITCH_CHANNEL=${{ vars.TWITCH_CHANNEL }}
           cache-from: type=gha

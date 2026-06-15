@@ -21,17 +21,21 @@ hlsAlwaysRemux: yes
 # rompía el acceso anónimo de lectura (cookieCheck) y la API.
 
 paths:
-  stream:
-    # Al recibir el stream, reenviar a Twitch via FFmpeg
+  # ── Canal WEB: la escena CON anime ──────────────────────────
+  # Solo se sirve como HLS al reproductor de la web y se graba.
+  # NO se reenvía a Twitch.
+  web:
+    record: yes
+    recordPath: /recordings/%path/%Y-%m-%dT%H-%M-%S.mp4
+    recordSegmentDuration: 1h
+
+  # ── Canal TWITCH: la escena SIN anime ───────────────────────
+  # Se reenvía a Twitch vía FFmpeg. Esto es lo que ven en Twitch.
+  twitch:
     runOnReady: >-
       ffmpeg
-      -re -i rtmp://127.0.0.1:1935/stream
+      -i rtmp://127.0.0.1:1935/twitch
       -c:v copy
       -c:a aac -b:a 160k -ar 44100
       -f flv rtmp://live.twitch.tv/app/${TWITCH_STREAM_KEY}
     runOnReadyRestart: yes
-
-    # Grabación automática
-    record: yes
-    recordPath: /recordings/%path/%Y-%m-%dT%H-%M-%S.mp4
-    recordSegmentDuration: 1h
