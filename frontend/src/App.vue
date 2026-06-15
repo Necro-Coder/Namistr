@@ -2,6 +2,7 @@
 import { onMounted, onBeforeUnmount, ref } from "vue";
 import Player from "./components/Player.vue";
 import Chat from "./components/Chat.vue";
+import TwitchEmbed from "./components/TwitchEmbed.vue";
 
 const HLS_URL = import.meta.env.VITE_HLS_URL || "/hls/web/index.m3u8";
 const TWITCH_CHANNEL = import.meta.env.VITE_TWITCH_CHANNEL || "";
@@ -62,6 +63,7 @@ onBeforeUnmount(() => timer && clearInterval(timer));
       </section>
 
       <aside class="side">
+        <TwitchEmbed />
         <Chat />
       </aside>
     </main>
@@ -127,8 +129,12 @@ body {
 .twlink { color: #b69cff; text-decoration: none; font-size: 0.85rem; font-weight: 700; }
 .twlink:hover { text-decoration: underline; }
 
-.side { min-width: 0; min-height: 0; display: flex; }
+.side {
+  min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; gap: 1rem;
+}
 .side > * { width: 100%; }
+.side .chat { flex: 1; min-height: 0; }
 
 /* ── Tablet: el chat baja debajo ───────────────────────── */
 @media (max-width: 1000px) {
