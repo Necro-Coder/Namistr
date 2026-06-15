@@ -162,6 +162,20 @@ app.post("/api/chat/send", async (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
 
+// Viewers: web (conexiones WS abiertas ≈ pestañas viendo) + Twitch.
+// NOTA: los viewers web NO se pueden sumar al contador oficial de
+// Twitch; aquí los contamos y exponemos por separado + el total.
+app.get("/api/viewers", async (_req, res) => {
+  let twitch = null;
+  try {
+    const s = await getStream();
+    twitch = s.live ? s.viewers : null;
+  } catch {
+    /* ignore */
+  }
+  res.json({ web: wss.clients.size, twitch });
+});
+
 wss.on("connection", (ws) => {
   // al conectar, manda el historial reciente
   ws.send(JSON.stringify({ type: "history", messages: recentMessages() }));

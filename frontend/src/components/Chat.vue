@@ -95,14 +95,14 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="chat">
-    <h2>Chat</h2>
+    <header class="head">// CHAT</header>
 
     <div ref="listEl" class="messages">
       <p v-for="m in messages" :key="m.id" class="msg">
-        <span class="name" :style="{ color: m.color || '#a970ff' }">{{ m.user }}</span>
+        <span class="name" :style="{ color: m.color || '#b69cff' }">{{ m.user }}</span>
         <span class="text">{{ m.text }}</span>
       </p>
-      <p v-if="!messages.length" class="empty">Aún no hay mensajes…</p>
+      <p v-if="!messages.length" class="empty">SIN MENSAJES TODAVÍA…</p>
     </div>
 
     <div class="composer">
@@ -111,46 +111,57 @@ onBeforeUnmount(() => {
           <input
             v-model="draft"
             :disabled="sending"
-            placeholder="Escribe un mensaje…"
+            placeholder="ESCRIBE UN MENSAJE…"
             maxlength="500"
           />
-          <button type="submit" :disabled="sending">Enviar</button>
+          <button type="submit" :disabled="sending">▶</button>
         </form>
         <small class="who">
-          como <strong>{{ me.displayName }}</strong> ·
-          <a href="#" @click.prevent="logout">salir</a>
+          {{ me.displayName }} ·
+          <a href="#" @click.prevent="logout">SALIR</a>
         </small>
         <small v-if="error" class="err">{{ error }}</small>
       </template>
       <button v-else class="login" @click="login">
-        Inicia sesión con Twitch para escribir
+        INICIA SESIÓN CON TWITCH PARA ESCRIBIR
       </button>
     </div>
   </section>
 </template>
 
 <style scoped>
-.chat { display: flex; flex-direction: column; height: 100%; }
-h2 { margin: 0 0 0.5rem; font-size: 1rem; }
-.messages {
-  flex: 1; overflow-y: auto; background: #18181b; border-radius: 8px;
-  padding: 0.5rem; min-height: 280px;
+.chat {
+  display: flex; flex-direction: column; height: 100%;
+  border: 2px solid var(--line); background: var(--panel);
+  font-family: var(--mono);
 }
-.msg { margin: 0.15rem 0; line-height: 1.35; word-wrap: break-word; }
-.name { font-weight: 700; margin-right: 0.35rem; }
-.empty { color: #777; }
-.composer { margin-top: 0.5rem; }
-.composer form { display: flex; gap: 0.4rem; }
+.head {
+  padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--line);
+  font-weight: 800; letter-spacing: 0.08em;
+}
+.messages { flex: 1; overflow-y: auto; padding: 0.6rem; }
+.msg { margin: 0.2rem 0; line-height: 1.4; word-wrap: break-word; font-size: 0.9rem; }
+.name { font-weight: 800; margin-right: 0.4rem; }
+.empty { color: #555; letter-spacing: 0.05em; }
+
+.composer { padding: 0.6rem; border-top: 2px solid var(--line); }
+.composer form { display: flex; gap: 0; }
 .composer input {
-  flex: 1; padding: 0.5rem; border-radius: 6px; border: 1px solid #3a3a3d;
-  background: #0e0e10; color: #efeff1;
+  flex: 1; padding: 0.55rem; border: 2px solid var(--line); border-right: 0;
+  background: #000; color: var(--fg); font: inherit;
 }
+.composer input:focus { outline: none; border-color: #fff; }
 .composer button {
-  padding: 0.5rem 0.9rem; border: 0; border-radius: 6px;
-  background: #9147ff; color: #fff; font-weight: 600; cursor: pointer;
+  padding: 0.55rem 0.9rem; border: 2px solid var(--fg);
+  background: var(--fg); color: #000; font-weight: 800; cursor: pointer;
 }
-.login { width: 100%; }
-.who { display: block; margin-top: 0.4rem; color: #adadb8; }
-.who a { color: #a970ff; }
-.err { display: block; margin-top: 0.3rem; color: #ff6b6b; }
+.login {
+  width: 100%; padding: 0.7rem; border: 2px solid #9147ff;
+  background: #9147ff; color: #fff; font-weight: 800; cursor: pointer;
+  font-family: var(--mono); letter-spacing: 0.04em;
+}
+.login:hover { background: #000; color: #9147ff; }
+.who { display: block; margin-top: 0.45rem; color: var(--dim); letter-spacing: 0.03em; }
+.who a { color: #b69cff; text-decoration: none; }
+.err { display: block; margin-top: 0.3rem; color: #ff5c5c; }
 </style>

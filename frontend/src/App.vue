@@ -1,102 +1,131 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from "vue";
-import Hls from "hls.js";
+import Player from "./components/Player.vue";
 import Chat from "./components/Chat.vue";
 
 const HLS_URL = import.meta.env.VITE_HLS_URL || "/hls/web/index.m3u8";
 const TWITCH_CHANNEL = import.meta.env.VITE_TWITCH_CHANNEL || "";
 
-const video = ref(null);
 const live = ref(false);
-const viewers = ref(null);
-let hls = null;
-let statusTimer = null;
+const webViewers = ref(0);
+const twitchViewers = ref(null);
+let timer = null;
 
-async function checkStatus() {
-  // ¿hay anime en directo? (MediaMTX)
+async function poll() {
   try {
     const r = await fetch("/api/stream/status");
     live.value = Boolean((await r.json()).live);
   } catch {
     live.value = false;
   }
-  // viewers en Twitch
   try {
-    const r = await fetch("/api/twitch/stream");
+    const r = await fetch("/api/viewers");
     const d = await r.json();
-    viewers.value = d.live ? d.viewers : null;
+    webViewers.value = d.web ?? 0;
+    twitchViewers.value = d.twitch;
   } catch {
-    viewers.value = null;
+    /* ignore */
   }
 }
 
 onMounted(() => {
-  checkStatus();
-  statusTimer = setInterval(checkStatus, 15000);
-
-  const el = video.value;
-  if (Hls.isSupported()) {
-    hls = new Hls({
-      lowLatencyMode: false,
-      // MediaMTX hace un "cookieCheck": pone una cookie y espera que se
-      // reenvíe. Sin esto hls.js no manda la cookie y obtiene un 404.
-      xhrSetup: (xhr) => {
-        xhr.withCredentials = true;
-      },
-    });
-    hls.loadSource(HLS_URL);
-    hls.attachMedia(el);
-  } else if (el.canPlayType("application/vnd.apple.mpegurl")) {
-    el.src = HLS_URL;
-  }
+  poll();
+  timer = setInterval(poll, 10000);
 });
-
-onBeforeUnmount(() => {
-  if (hls) hls.destroy();
-  if (statusTimer) clearInterval(statusTimer);
-});
+onBeforeUnmount(() => timer && clearInterval(timer));
 </script>
 
 <template>
-  <main>
-    <header>
-      <h1>Anime Stream</h1>
-      <span :class="['badge', live ? 'on' : 'off']">
-        {{ live ? "EN VIVO" : "OFFLINE" }}
-      </span>
-      <span v-if="viewers !== null" class="viewers">👁 {{ viewers }}</span>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">NAMISTR</div>
+      <div class="status">
+        <span class="badge" :class="{ on: live }">{{ live ? "EN DIRECTO" : "OFFLINE" }}</span>
+        <span class="count">WEB · {{ webViewers }}</span>
+        <span v-if="twitchViewers !== null" class="count tw">TWITCH · {{ twitchViewers }}</span>
+        <span class="count total">TOTAL · {{ webViewers + (twitchViewers || 0) }}</span>
+      </div>
     </header>
 
-    <div class="layout">
-      <div class="player">
-        <video ref="video" controls autoplay muted playsinline></video>
-        <p v-if="TWITCH_CHANNEL" class="twitch">
-          También en
-          <a :href="`https://twitch.tv/${TWITCH_CHANNEL}`" target="_blank" rel="noopener">
-            twitch.tv/{{ TWITCH_CHANNEL }}
-          </a>
-        </p>
-      </div>
-      <aside class="sidebar">
+    <main class="grid">
+      <section class="stage">
+        <Player :src="HLS_URL" />
+        <div class="meta">
+          <h1>// EMISIÓN EN DIRECTO</h1>
+          <a
+            v-if="TWITCH_CHANNEL"
+            class="twlink"
+            :href="`https://twitch.tv/${TWITCH_CHANNEL}`"
+            target="_blank" rel="noopener"
+          >TAMBIÉN EN TWITCH.TV/{{ TWITCH_CHANNEL.toUpperCase() }} ↗</a>
+        </div>
+      </section>
+
+      <aside class="side">
         <Chat />
       </aside>
-    </div>
-  </main>
+    </main>
+  </div>
 </template>
 
 <style>
-body { margin: 0; background: #0e0e10; color: #efeff1; font-family: system-ui, sans-serif; }
-main { max-width: 1280px; margin: 0 auto; padding: 1.5rem; }
-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-.badge { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; }
-.badge.on { background: #e91916; }
-.badge.off { background: #3a3a3d; }
-.viewers { font-size: 0.85rem; color: #adadb8; }
+:root {
+  --bg: #000;
+  --panel: #0a0a0a;
+  --line: #2a2a2a;
+  --fg: #f2f2f2;
+  --dim: #888;
+  --mono: "JetBrains Mono", "Courier New", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--mono);
+}
 
-.layout { display: grid; grid-template-columns: 1fr 340px; gap: 1rem; align-items: start; }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+.app { min-height: 100vh; }
 
-video { width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; }
-.twitch a { color: #a970ff; }
-.sidebar { height: 70vh; min-height: 360px; }
+/* ── Topbar ───────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 0.9rem 1.25rem;
+  border-bottom: 2px solid var(--line);
+  position: sticky; top: 0; background: var(--bg); z-index: 5;
+}
+.brand { font-weight: 800; font-size: 1.4rem; letter-spacing: 0.18em; }
+.status { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.badge {
+  border: 2px solid var(--line); color: var(--dim);
+  padding: 0.25rem 0.6rem; font-weight: 800; letter-spacing: 0.05em;
+  text-transform: uppercase; font-size: 0.8rem;
+}
+.badge.on { background: #e1112c; border-color: #e1112c; color: #fff; }
+.count {
+  border: 2px solid var(--line); padding: 0.25rem 0.6rem;
+  font-size: 0.8rem; font-weight: 700; color: var(--dim);
+}
+.count.tw { color: #b69cff; border-color: #3a2e5c; }
+.count.total { color: #000; background: var(--fg); border-color: var(--fg); }
+
+/* ── Layout ───────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1.25rem;
+  max-width: 1600px; margin: 0 auto; padding: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+
+.stage { min-width: 0; }
+.meta {
+  border: 2px solid var(--line); border-top: 0;
+  padding: 0.8rem 1rem; background: var(--panel);
+}
+.meta h1 { margin: 0 0 0.4rem; font-size: 1rem; letter-spacing: 0.06em; }
+.twlink { color: #b69cff; text-decoration: none; font-size: 0.85rem; font-weight: 700; }
+.twlink:hover { text-decoration: underline; }
+
+.side { height: 78vh; min-height: 420px; position: sticky; top: 5rem; }
+@media (max-width: 1000px) { .side { height: 60vh; position: static; } }
 </style>
