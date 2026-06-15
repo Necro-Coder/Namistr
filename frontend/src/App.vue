@@ -26,7 +26,14 @@ onMounted(() => {
 
   const el = video.value;
   if (Hls.isSupported()) {
-    hls = new Hls({ lowLatencyMode: false });
+    hls = new Hls({
+      lowLatencyMode: false,
+      // MediaMTX hace un "cookieCheck": pone una cookie y espera que se
+      // reenvíe. Sin esto hls.js no manda la cookie y obtiene un 404.
+      xhrSetup: (xhr) => {
+        xhr.withCredentials = true;
+      },
+    });
     hls.loadSource(HLS_URL);
     hls.attachMedia(el);
   } else if (el.canPlayType("application/vnd.apple.mpegurl")) {
