@@ -44,8 +44,10 @@ services:
     environment:
       - MEDIAMTX_API_URL=http://127.0.0.1:9997
       - PORT=3001
+      - TWITCH_CHANNEL=${TWITCH_CHANNEL}
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
+      - TWITCH_REDIRECT_URI=${TWITCH_REDIRECT_URI}
       - JWT_SECRET=${JWT_SECRET}
     network_mode: host
 
